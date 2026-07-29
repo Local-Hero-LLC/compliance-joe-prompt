@@ -30,7 +30,12 @@ If the two do not match, the call is **dropped** (spoof / fraud check). Verified
 
 ---
 
-## Known limitation (for Charlotte)
+## For Charlotte: notes and open items
 
-> [!WARNING]
-> On the v0.6 model I could not get the **graceful goodbye on a mismatch** to fire reliably. The mismatch drop itself is reliable (the caller never proceeds and no verification detail is revealed), but the agent usually hangs up **without** first speaking a closing line. Three prompt variants that explicitly forced "speak the goodbye, then hang up, never silent" produced the spoken goodbye only about 2 of 9 times. For now the spoken goodbye is treated as advisory; the silent drop is accepted because it rejects the caller and leaks nothing.
+**Confirmed working on the live line** (production `v0.6` model, real inbound calls): Trestle returns a two-letter code and the caller says the full state name, and v0.6 correctly treats them as the same and proceeds (e.g., the number resolved to `PA`, the caller said "Pennsylvania", it matched, ran pre-qual, and transferred). A mismatched spoken state is dropped, and no internal reasoning is spoken aloud.
+
+**Open items worth your eyes:**
+
+1. **Number portability / false drops.** A caller's Trestle-registered state can differ from where they actually are. In testing, a 305 (Miami) number resolved to `PA` on Trestle, so a caller physically in Florida saying "Florida" gets dropped as a mismatch. Worth deciding how much tolerance the state check should allow, or whether to lean on the `{{twilioState}}` value instead.
+2. **Trestle-error fallback is unverified on the real phone.** On every live test call `getCallerState` succeeded, so the `{{twilioState}}` error branch never ran. Please confirm with a number Trestle cannot resolve that the agent falls back to `{{twilioState}}` and still proceeds on a match, rather than dropping a legit caller.
+3. **Graceful goodbye on a mismatch is not reliable on v0.6.** It drops the caller correctly (never proceeds, leaks nothing) but usually hangs up without speaking a closing line first. Three variants forcing "speak the goodbye, then hang up" produced it only about 2 of 9 times, so it is treated as advisory for now.
