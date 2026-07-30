@@ -9,9 +9,8 @@ Inbound voice-agent prompt on Ultravox (`ultravox-v0.6-llama3.3-70b`). Screens i
 
 - **Call:** 970-409-1156
 - **Agent:** https://app.ultravox.ai/agents/a5e4eedc-be3f-4104-82cd-30ec8bc7ce2e
-- **Prompt:** [`compliance_joe_gepa_r1_20260730.md`](compliance_joe_gepa_r1_20260730.md)
+- **Prompt:** [`compliance_joe.md`](compliance_joe.md)
 - **SHA-256 (LF):** `d17acdb000c18fd03f55f1a85b6269d4805118ad9f03dcbe1feaf57fb5da6656`
-- **Previous:** [`compliance_joe_v7.md`](compliance_joe_v7.md) (`dc9b162ddfbe9f56…`)
 
 ---
 
