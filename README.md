@@ -9,12 +9,14 @@ Inbound voice-agent prompt on Ultravox (`ultravox-v0.6-llama3.3-70b`). Screens i
 
 - **Call:** 970-409-1156
 - **Agent:** https://app.ultravox.ai/agents/a5e4eedc-be3f-4104-82cd-30ec8bc7ce2e
-- **Prompt:** [`compliance_joe.md`](compliance_joe.md)
+- **Prompt:** [`compliance_joe_v9.md`](compliance_joe_v9.md)
 - **SHA-256 (LF):** `d17acdb000c18fd03f55f1a85b6269d4805118ad9f03dcbe1feaf57fb5da6656`
 
 ---
 
 ## Provenance
+
+v9 follows v7 in this repo and v8 (the prompt this replaces on the test line). The internal suite also has v9 to v11 files from the earlier narration work; those are unrelated experiment artifacts. The authoritative identity of this file is the source path and SHA above.
 
 Addresses the Jamie Sutton / Carlos Medina feedback of 2026-07-29. **The prompt text was written by GEPA and not hand-edited.**
 
