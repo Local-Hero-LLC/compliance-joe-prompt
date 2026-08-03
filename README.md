@@ -16,6 +16,21 @@ Inbound voice-agent prompts on Ultravox (`ultravox-v0.6-llama3.3-70b`). Screens 
 
 Behaviour is identical. The only difference is identity, and it is a **`{{brandName}}` merge token**, not a hardcoded name: the FQI prompt contains the token 10 times and the company name 0 times, so one file serves any brand by supplying the token at call time. That avoids a near-identical prompt per brand, each needing its own testing.
 
+## Where `compliance_joe_v9.md` is deployed
+
+Charlotte created one Ultravox agent per L2C environment on 2026-08-03 for the CALLS-3410 delivery. **All three carry this repo's `compliance_joe_v9.md` byte for byte** (sha `d17acdb000c1`, 16,837 chars, verified 2026-08-03), so the file here is the prompt that ships.
+
+| Agent | Ultravox id | Endpoint |
+| :--- | :--- | :--- |
+| `Compliance-Joe-Dev` | `e20e3520-cdbb-45c0-a6eb-1e9f14261fbe` | `dev.voice-inbound-compliance.callstoconvert.com` |
+| `Compliance-Joe-Stage` | `0ae8e70b-6b9d-4893-bbec-80614f411f38` | `staging.voice-inbound-compliance.callstoconvert.com` |
+| `Compliance-Joe-Prod` | `33b95124-1b94-4b97-9ce5-658861044328` | `voice-inbound-compliance.callstoconvert.com` |
+
+They differ from `Compliance-Joe-V1` only in their environment-suffixed tools (`getCallerState_<env>`, `sendQualification_<env>`), which is how each posts qualification details to its own L2C environment.
+
+> [!CAUTION]
+> **V1, the agent on the 970-409-1156 test line, now has PRODUCTION routing attached.** Its routing tool changed from `sendQualification` (`febc8639…`) to `sendQualification_prod` (`df7b3c14…`) between 7/30 and 8/03, and that is the same tool id `Compliance-Joe-Prod` uses. A cooperative test caller that reaches the handoff on that line will fire production routing. The prompt is unchanged; the tool is not. Confirm this is deliberate before running transfer-reaching tests there.
+
 ## Provenance
 
 **Both prompts were written by GEPA and not hand-edited.**
