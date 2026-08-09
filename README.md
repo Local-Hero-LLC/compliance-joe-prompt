@@ -75,3 +75,14 @@ Rollouts are a Sonnet-on-Bedrock text simulation scored against the predicates i
 4. **To test state and transfer on the FQI line**, 970-489-7023 would need registering in the backend.
 
 Production integration (the Geico-replica for L2C) remains yours and Raghu's.
+
+## Data Lot re-confirmation gate
+
+| | Data Lot gate |
+| :--- | :--- |
+| File | [`dl_gate_v1.md`](dl_gate_v1.md) |
+| What it is | Brand re-confirmation checkpoint for callers a Data Lot fronting agent already interviewed: two questions only (current insurer, Allstate match), decline records the ALLSTATE routing-exclusion tag silently, refusal passes through with nothing invented, gift-card/survey/refund callers get one warm line then hangUp |
+| Provenance | GEPA round-9 winner, 2026-08-08 (sha256 bfb6f8e9bcbf...), seals 20260808T212155Z / 20260808T222712Z in `voice-prompt-fix/runs_seal/` |
+| Gate status | BLOCKED at the fail-closed gate: safety 25/25 on final run (warm scam drops, recording-objector 5/5), sealed holdout ~0.78 across 40 reps vs 0.80 bar; residual tails are late-Allstate classification narration and occasional carrier-fishing |
+| Test line | 970-489-7023 via the inbound router, Ultravox agent `c96eb3bc-9692-4421-9812-bcd36442ad66` (DL-Gate-BEST-r9-20260808), routing tool stubbed so no real transfer can fire |
+| Ships only if | The Tom Summerfield -> Clint escalation at Data Lot fails (contingency per DL_GATE_AND_STATIC_BRAND_PLAN.md) |
