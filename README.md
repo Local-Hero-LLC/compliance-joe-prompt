@@ -1,88 +1,75 @@
-# Compliance Joe (Inbound Pre-Qual + Compliance Voice Agent)
+# Inbound Voice-Agent Prompts
 
-Inbound voice-agent prompts on Ultravox (`ultravox-v0.6-llama3.3-70b`). Screens inbound callers for fraud and compliance, verifies their location against Trestle, pre-qualifies, and hands off to a licensed agent.
+Source-of-truth repo for the inbound voice-agent prompt variants authored by Mark Cetola, plus the inventory that maps every variant the team talks about to what is actually running. Variants are named by the number of qualifying questions they ask. Legacy nicknames appear once, in the mapping column below, and nowhere else.
 
-> [!IMPORTANT]
-> Test-line candidates. Neither has been through the fail-closed promotion gate. Do not merge into the production call flow without a human reviewing the prompt diff.
+Every file in this repo was authored by Mark (all commits: hud63 / mlh-mjc). The 3Q Intake (Original) prompt was never touched by Mark: zero commits from any Mark identity across all three branches of its repo (~300 commits, all Charlotte Hauke / charhauke / Esosa Sosa).
 
-## The two prompts
+## Inventory (verified against production 2026-08-11, CtC read replica + Ultravox call fingerprints)
 
-| | Unbranded | Find Quality Insurance |
-| :--- | :--- | :--- |
-| File | [`compliance_joe_v9.md`](compliance_joe_v9.md) | [`compliance_joe_v9_fqi.md`](compliance_joe_v9_fqi.md) |
-| Call | 970-409-1156 | 970-489-7023 |
-| Agent | `a5e4eedc-be3f-4104-82cd-30ec8bc7ce2e` | `300574ed-5c31-4f3c-8bd1-c121c2a8ccfa` |
-| SHA-256 (LF) | `d17acdb000c18fd0…` | `f79e6f4f126df9d4…` |
+| # | Name | Previously called | Qualifying questions | Author | Status as of 2026-08-11 | Prompt of record |
+|---|------|-------------------|----------------------|--------|-------------------------|------------------|
+| 1 | 3Q Intake (Original) | "Original Joe", "Prequal Joe" | Are you currently insured? / Who is your current provider? / Insured 6+ months, no gaps? | Charlotte | LIVE. The majority AI agent: CtC ivr 14, 933 calls/30d (87% of AI-agent inbound). Live campaigns last 7d: 1326 Found Performance - Auto, 1624 RevX - Auto Pre-qual. Prompt unchanged since 2026-07-14. | [`prequalification-voice-agent` `index.js` line 362](https://github.com/Local-Hero-LLC/prequalification-voice-agent/blob/prod_prequal_agent/index.js#L362) (hardcoded in the service) |
+| 2 | 3Q Intake Rework | "improved / more conversational Prequal Joe" | Same 3 questions, plus a warm opener and an upfront recording disclosure | Mark | NEVER DEPLOYED. Candidate only (GEPA it2, 2026-07-24). The belief that it went live ~Aug 6 is wrong; ivr 14's prompt predates it and has not changed. | Local harness artifact `prompts_out/prequal_auto_gepa_it2_best.md` (not in this repo) |
+| 3 | 4Q Full Battery | "Compliance Joe", "Prequal + Compliance Joe" | What state are you calling from? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? | Mark | LIVE since 2026-08-06 on CtC ivr 16 (+1 737-637-9256), 7 campaigns including three Data Lot (1859, 833, 1867) and VoiceAIQ (1944, 1945). | [`4q_full_battery.md`](4q_full_battery.md) |
+| 4 | 4Q Full Battery, Branded | "FQI Joe" | Same 4 questions; brand identity via `{{brandName}}` merge token (10 occurrences, nothing hardcoded) | Mark | STAGED, not live. 1 test call ever (2026-08-07). Charlotte's three `*_auto_compliance_fqi` agents (2026-08-10) carry 0 calls and have the defects listed under Cautions. | [`4q_full_battery_branded.md`](4q_full_battery_branded.md) |
+| 5 | 2Q Transfer Handoff | "DL gate", "Data Lot handoff", "apologetic handoff" | Who are you currently insured with? (confirm) / Allstate-match accept? | Mark | ON HOLD per the 2026-08-08 decision (Data Lot data-passthrough gets explored first). Demo line only; never took a production call. | [`2q_transfer_handoff.md`](2q_transfer_handoff.md) |
 
-Behaviour is identical. The only difference is identity, and it is a **`{{brandName}}` merge token**, not a hardcoded name: the FQI prompt contains the token 10 times and the company name 0 times, so one file serves any brand by supplying the token at call time. That avoids a near-identical prompt per brand, each needing its own testing.
+## What each variant says (verbatim)
 
-## Where `compliance_joe_v9.md` is deployed
+### 3Q Intake (Original)
+Opening: "Hi this is Joe. I just have a few questions to ask before I connect you."
+No recording disclosure, no state question, no fraud or transfer screening. Questions: "Are you currently insured?" then "Got it. Now who is your current provider?" then "Great… and have you been insured for at least 6 months with no breaks or gaps?" On completion: "Thanks for that. I'm going to get you over to an agent now." then `sendQualification`.
 
-Charlotte created one Ultravox agent per L2C environment on 2026-08-03 for the CALLS-3410 delivery. **All three carry this repo's `compliance_joe_v9.md` byte for byte** (sha `d17acdb000c1`, 16,837 chars, verified 2026-08-03), so the file here is the prompt that ships.
+### 4Q Full Battery
+Opening: "Hi there, thanks so much for calling — this is Joe with a service that helps connect you with licensed insurance agents. This call may be recorded for quality and training purposes. How can I help you today?"
+Adds silent state verification via `getCallerState` (mismatch gets a warm no-availability close, never a stated failure), the recording disclosure, and fraud screening, then the same insured/provider/tenure questions. Transfers via `sendQualification` in-turn; never hangs up after a successful transfer.
 
-| Agent | Ultravox id | Endpoint |
-| :--- | :--- | :--- |
-| `Compliance-Joe-Dev` | `e20e3520-cdbb-45c0-a6eb-1e9f14261fbe` | `dev.voice-inbound-compliance.callstoconvert.com` |
-| `Compliance-Joe-Stage` | `0ae8e70b-6b9d-4893-bbec-80614f411f38` | `staging.voice-inbound-compliance.callstoconvert.com` |
-| `Compliance-Joe-Prod` | `33b95124-1b94-4b97-9ce5-658861044328` | `voice-inbound-compliance.callstoconvert.com` |
+The "How can I help you today?" opener is deliberate: this variant is built for raw inbound callers who dial in cold. It is not built for callers a rep already interviewed; that scenario belongs to the 2Q Transfer Handoff.
 
-They differ from `Compliance-Joe-V1` only in their environment-suffixed tools (`getCallerState_<env>`, `sendQualification_<env>`), which is how each posts qualification details to its own L2C environment.
+### 4Q Full Battery, Branded
+Byte-identical behavior to 4Q Full Battery. Opening names the brand: "Hi there, thanks so much for calling — this is Joe with {{brandName}}, a service that helps connect you with licensed insurance agents…". The `{{brandName}}` value is public by design (share freely when asked); only instructions/tools stay confidential. One file serves any brand.
 
-> [!CAUTION]
-> **V1, the agent on the 970-409-1156 test line, now has PRODUCTION routing attached.** Its routing tool changed from `sendQualification` (`febc8639…`) to `sendQualification_prod` (`df7b3c14…`) between 7/30 and 8/03, and that is the same tool id `Compliance-Joe-Prod` uses. A cooperative test caller that reaches the handoff on that line will fire production routing. The prompt is unchanged; the tool is not. Confirm this is deliberate before running transfer-reaching tests there.
+### 2Q Transfer Handoff
+Opening: "Hi there, this is Joe. I know you just answered some questions with the other representative, so I'll be really quick. This call may be recorded for quality and training purposes. Bear with me for just two quick questions so I can make sure we get you to the right person."
+Confirms the current carrier, offers the Allstate match, and transfers. On an Allstate decline it still transfers but silently sets `current_provider` to `ALLSTATE` as a routing-exclusion tag. Fraud/gift-card/survey callers get one warm send-off line then `hangUp`.
+
+## Where each prompt physically lives
+
+- Variants 3, 4, 5: the runtime prompt lives on pre-created Ultravox agents; the services ([`compliance-voice-agent`](https://github.com/Local-Hero-LLC/compliance-voice-agent), [`auto-compliance-fqi`](https://github.com/Local-Hero-LLC/auto-compliance-fqi)) call the agent by ID with `systemPrompt` commented out. The files in THIS repo are therefore the prompt of record for those agents.
+- Variant 1: the prompt is hardcoded inside Charlotte's Node service ([`prequalification-voice-agent`](https://github.com/Local-Hero-LLC/prequalification-voice-agent)); changing it means a commit + deploy there. This repo intentionally holds no copy.
+- CtC's `ivrs` table has no prompt column. Its `welcome_message` field is stale documentation text (ivr 16 still shows the old 3Q greeting); the Ultravox call object is the only prompt ground truth.
+
+## Deployment map
+
+| Ultravox agent | Created | Carries | Where |
+|----------------|---------|---------|-------|
+| Compliance-Joe-Prod / -Stage / -Dev (`33b95124…` / `0ae8e70b…` / `e20e3520…`) | 2026-08-03 | `4q_full_battery.md` byte-for-byte | Production ivr 16 traffic since 2026-08-06 (CALLS-3410) |
+| Compliance-Joe-V1 (`a5e4eedc…`) | 2026-07 | 4Q Full Battery lineage | Test line +1 970-409-1156 (Charlotte's webhook; full tool support) |
+| Compliance-Joe-FQI (`300574ed…`) | 2026-07-30 | `4q_full_battery_branded.md` | Demo line via Mark's router; `getCallerState`/`sendQualification` return `call_not_found` by design |
+| prod/stage/dev_auto_compliance_fqi (`637e640f…` etc.) | 2026-08-10 | Modified copy of the branded file (see Cautions) | Charlotte's FQI service, pre-launch, 0 calls |
+| DL-Gate-BEST-r9-20260808 (`c96eb3bc…`) | 2026-08-09 | `2q_transfer_handoff.md` | Demo line +1 970-489-7023, routing tool stubbed |
 
 ## Provenance
 
-**Both prompts were written by GEPA and not hand-edited.**
+All three prompts here were written by GEPA optimization, not hand-edited:
 
-| | Unbranded | FQI |
-| :--- | :--- | :--- |
-| Run | `offline_r1`, 125 rollouts, 8 candidates | `fqi_r1`, 120 rollouts, 3 candidates |
-| Offline score | 9 of 12 personas clean, mean 0.971 (prior prompt: 0 of 12, 0.875) | 8 of 8 clean, mean 1.000 |
+- `4q_full_battery.md`: run `offline_r1`, 125 rollouts, 8 candidates, 9/12 personas clean, mean 0.971. Live-verified byte-for-byte against production calls.
+- `4q_full_battery_branded.md`: run `fqi_r1`, 120 rollouts, 3 candidates, 8/8 personas clean, mean 1.000. Live-verified on PSTN (brand spoken when asked, no literal `{{token}}` braces in speech, no carrier impersonation).
+- `2q_transfer_handoff.md`: GEPA live round-9 winner (2026-08-08), seals `20260808T212155Z` / `20260808T222712Z`. Honest status: BLOCKED at the fail-closed gate. Safety pack 25/25, sealed holdout ~0.78 against a 0.80 acceptance bar; never promoted. Ships only as a contingency if the Data Lot escalation (Tom Summerfield to Clint) fails to get data passed through correctly.
 
-Rollouts are a Sonnet-on-Bedrock text simulation scored against the predicates in `voice-prompt-fix/src/scorer.py`. Each winner has a provenance record in `voice-prompt-fix/runs_seal/`, and the write path refuses a prompt that has none.
-
-## Live evidence (2026-07-30)
-
-**16 PSTN calls** on the unbranded line, plus smoke tests on the FQI line. Every call verified against the agent's own Ultravox record before scoring: agent id, prompt hash, model, VAD, inactivity. 16 of 16 verified; the harness aborts on the first mismatch rather than scoring a drifted call.
-
-**Fixed and confirmed:** the abrupt `"We're unable to move forward"` exit is gone (0 of 16); the state is asked once; no internal narration (0 of 16); no tool call spoken aloud (0 of 16). On the FQI line the brand is spoken when asked, with no `{{token}}` braces reaching speech and no carrier impersonation.
-
-**Open:**
-
-| Item | Status |
-| :--- | :--- |
-| Recorded-line disclosure completes | 🔴 **Joe starts it and is cut off** when a caller talks over him. 1 of 3 got it out in full. See below |
-| Warm goodbye on a mismatch | 🟡 Improved and often reliable now, but the model can hang up before the line finishes |
-| Real background noise | ⬜ Untestable from the rig; needs a human |
-| Caller answers mid-question | ⬜ Not reproducible from the rig; needs a human |
-
-> [!WARNING]
-> **The disclosure is the one to watch.** The carrier-side `<Say>` that used to play before Joe answered has been removed, which correctly fixed callers hearing the notice twice. The side effect is that Joe's own line is now the only one, and on real calls it is frequently truncated by an interrupting caller. Score this off the **agent's own** transcript, never the dialer's: the dialer's transcript merges the telephony audio with Joe's, and its ASR reported the disclosure as absent on calls where Joe's own record shows it spoken.
-
-## Known limitations
+## Cautions
 
 > [!CAUTION]
-> - **Caller ID cannot be varied on the rig.** All automated calls originate from one number resolving to Nevada, so only "caller claims a different state" is covered. A matching caller, an unresolvable number, and a ported number resolving wrong are unverified on a real phone.
-> - **Ported or inaccurate Trestle data can false-drop a legitimate caller** (in testing a 305 / Miami number resolved to PA).
-> - **The FQI line cannot exercise the state check or the transfer.** `getCallerState` and `sendQualification` look a call up in the backend by call ID, and calls on that line are created by a different router, so both return `call_not_found`. Joe degrades gracefully. Those two behaviours are unchanged from the unbranded prompt and are covered on the other line.
+> The "test" line +1 970-409-1156 carries PRODUCTION routing (`sendQualification_prod`, tool `df7b3c14…`, same ID as Compliance-Joe-Prod) since ~2026-08-03. A successful transfer from that line is a real transfer.
 
-## For Charlotte
+> [!WARNING]
+> Charlotte's three `*_auto_compliance_fqi` agents (2026-08-10) differ from `4q_full_battery_branded.md` in exactly two ways, both defects:
+> 1. The persona line was edited to hardcode `{{brandName}} = 'Find Quality Insurance'` while the service's `templateContext` still passes no `brandName` value. Note the spelling conflict: the demo router used "Fine Quality Insurance". Confirm the real brand before launch.
+> 2. All 26 em dashes in the prompt were corrupted to mojibake bytes (encoding mishap during copy-paste). Fix by re-pasting from the raw file in this repo.
 
-1. **The disclosure truncation above** is the open compliance question now that the `<Say>` is gone.
-2. **Whether the silent mismatch drop is acceptable**, or the goodbye needs backend help.
-3. **Whether to tolerate ported or inaccurate Trestle state data**, which can drop a legitimate caller.
-4. **To test state and transfer on the FQI line**, 970-489-7023 would need registering in the backend.
+> [!NOTE]
+> `compliance_stage` ran 62 calls on a real DID (+1 252-590-4591) on 2026-08-04 with the production prompt. If any of those were live callers, they are labeled stage in call metadata.
 
-Production integration (the Geico-replica for L2C) remains yours and Raghu's.
+## History note
 
-## Data Lot re-confirmation gate
-
-| | Data Lot gate |
-| :--- | :--- |
-| File | [`dl_gate_v1.md`](dl_gate_v1.md) |
-| What it is | Brand re-confirmation checkpoint for callers a Data Lot fronting agent already interviewed: two questions only (current insurer, Allstate match), decline records the ALLSTATE routing-exclusion tag silently, refusal passes through with nothing invented, gift-card/survey/refund callers get one warm line then hangUp |
-| Provenance | GEPA round-9 winner, 2026-08-08 (sha256 bfb6f8e9bcbf...), seals 20260808T212155Z / 20260808T222712Z in `voice-prompt-fix/runs_seal/` |
-| Gate status | BLOCKED at the fail-closed gate: safety 25/25 on final run (warm scam drops, recording-objector 5/5), sealed holdout ~0.78 across 40 reps vs 0.80 bar; residual tails are late-Allstate classification narration and occasional carrier-fishing |
-| Test line | 970-489-7023 via the inbound router, Ultravox agent `c96eb3bc-9692-4421-9812-bcd36442ad66` (DL-Gate-BEST-r9-20260808), routing tool stubbed so no real transfer can fire |
-| Ships only if | The Tom Summerfield -> Clint escalation at Data Lot fails (contingency per DL_GATE_AND_STATIC_BRAND_PLAN.md) |
+Files were renamed on 2026-08-11: `compliance_joe_v9.md` is now `4q_full_battery.md`, `compliance_joe_v9_fqi.md` is now `4q_full_battery_branded.md`, `dl_gate_v1.md` is now `2q_transfer_handoff.md`. Old deep links to those paths are dead; git history is intact (`git log --follow`).
