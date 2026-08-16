@@ -13,6 +13,7 @@ Every file in this repo was authored by Mark (all commits: hud63 / mlh-mjc). The
 | 3 | 4Q Full Battery | "Compliance Joe", "Prequal + Compliance Joe" | What state are you calling from? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? | Mark | LIVE since 2026-08-06 on CtC ivr 16 (+1 737-637-9256), 7 campaigns including three Data Lot (1859, 833, 1867) and VoiceAIQ (1944, 1945). | [`4q_full_battery.md`](4q_full_battery.md) |
 | 4 | 4Q Full Battery, Branded | "FQI Joe" | Same 4 questions; brand identity via `{{brandName}}` merge token (10 occurrences, nothing hardcoded) | Mark | STAGED, not live. 1 test call ever (2026-08-07). Charlotte's three `*_auto_compliance_fqi` agents (2026-08-10) carry 0 calls and have the defects listed under Cautions. | [`4q_full_battery_branded.md`](4q_full_battery_branded.md) |
 | 5 | 2Q Transfer Handoff | "DL gate", "Data Lot handoff", "apologetic handoff" | Who are you currently insured with? (confirm) / Allstate-match accept? | Mark | ON HOLD per the 2026-08-08 decision (Data Lot data-passthrough gets explored first). Demo line only; never took a production call. | [`2q_transfer_handoff.md`](2q_transfer_handoff.md) |
+| 6 | 5Q Full Battery | "Compliance Joe + 3 questions", "the MDP-314 prompt" | And what state do you live in? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? / Compliance advisory then say your state again | Mark | NOT DEPLOYED, tested and awaiting approval (2026-08-16). Derived from variant 3 for MDP-314 / CALLS-3479. Measured against variant 3 on 8 personas: the gift-card caller is transferred 3/3 by variant 3 and dropped 3/3 by this one. | [`5q_full_battery.md`](5q_full_battery.md) |
 
 ## What each variant says (verbatim)
 
@@ -33,9 +34,14 @@ Byte-identical behavior to 4Q Full Battery. Opening names the brand: "Hi there, 
 Opening: "Hi there, this is Joe. I know you just answered some questions with the other representative, so I'll be really quick. This call may be recorded for quality and training purposes. Bear with me for just two quick questions so I can make sure we get you to the right person."
 Confirms the current carrier, offers the Allstate match, and transfers. On an Allstate decline it still transfers but silently sets `current_provider` to `ALLSTATE` as a routing-exclusion tag. Fraud/gift-card/survey callers get one warm send-off line then `hangUp`.
 
+### 5Q Full Battery
+Opening: identical to 4Q Full Battery. The state question is reworded from "Great, and what state are you calling from?" to "And what state do you live in?" — residence, not location, which is the substantive change MDP-314 asked for and which changes who the `getCallerState` check declines.
+Adds a fifth ask before any transfer: a fixed compliance advisory ("if you were promised any money, or a gift card, or if someone called you first without you asking for it, that is illegal and we cannot help you") closing with "please say again the state where you currently live now". The advisory is delivered to every caller who reaches a transfer, is never paraphrased, and always precedes `sendQualification`.
+Adds an answer-recording procedure: repeat each answer back using the caller's own words, re-ask if there is nothing to repeat, and after three asks of the same question close the call with the existing warm no-availability line rather than transferring. The re-confirmed state is collected but NOT compared against the earlier answer; comparison remains a separate anti-fraud concern.
+
 ## Where each prompt physically lives
 
-- Variants 3, 4, 5: the runtime prompt lives on pre-created Ultravox agents; the services ([`compliance-voice-agent`](https://github.com/Local-Hero-LLC/compliance-voice-agent), [`auto-compliance-fqi`](https://github.com/Local-Hero-LLC/auto-compliance-fqi)) call the agent by ID with `systemPrompt` commented out. The files in THIS repo are therefore the prompt of record for those agents.
+- Variants 3, 4, 5, 6: the runtime prompt lives on pre-created Ultravox agents; the services ([`compliance-voice-agent`](https://github.com/Local-Hero-LLC/compliance-voice-agent), [`auto-compliance-fqi`](https://github.com/Local-Hero-LLC/auto-compliance-fqi)) call the agent by ID with `systemPrompt` commented out. The files in THIS repo are therefore the prompt of record for those agents.
 - Variant 1: the prompt is hardcoded inside Charlotte's Node service ([`prequalification-voice-agent`](https://github.com/Local-Hero-LLC/prequalification-voice-agent)); changing it means a commit + deploy there. This repo intentionally holds no copy.
 - CtC's `ivrs` table has no prompt column. Its `welcome_message` field is stale documentation text (ivr 16 still shows the old 3Q greeting); the Ultravox call object is the only prompt ground truth.
 
@@ -48,14 +54,18 @@ Confirms the current carrier, offers the Allstate match, and transfers. On an Al
 | Compliance-Joe-FQI (`300574ed…`) | 2026-07-30 | `4q_full_battery_branded.md` | Demo line via Mark's router; `getCallerState`/`sendQualification` return `call_not_found` by design |
 | prod/stage/dev_auto_compliance_fqi (`637e640f…` etc.) | 2026-08-10 | Modified copy of the branded file (see Cautions) | Charlotte's FQI service, pre-launch, 0 calls |
 | DL-Gate-BEST-r9-20260808 (`c96eb3bc…`) | 2026-08-09 | `2q_transfer_handoff.md` | Demo line +1 970-489-7023, routing tool stubbed |
+| MDP-314-candidate-v3-TEMP (`14fce552…`) | 2026-08-16 | `5q_full_battery.md` | TEMPORARY. Created to test this variant; +1 970-489-7023 was repointed to it and must be reverted to `c96eb3bc…`. Retire the agent after. |
 
 ## Provenance
 
-All three prompts here were written by GEPA optimization, not hand-edited:
+Variants 3, 4 and 5 were written by GEPA optimization, not hand-edited. Variant 6 was not: it is a scripted derivation of variant 3, and it is the only prompt here whose wording came from the business rather than from a search.
+
 
 - `4q_full_battery.md`: run `offline_r1`, 125 rollouts, 8 candidates, 9/12 personas clean, mean 0.971. Live-verified byte-for-byte against production calls.
 - `4q_full_battery_branded.md`: run `fqi_r1`, 120 rollouts, 3 candidates, 8/8 personas clean, mean 1.000. Live-verified on PSTN (brand spoken when asked, no literal `{{token}}` braces in speech, no carrier impersonation).
 - `2q_transfer_handoff.md`: GEPA live round-9 winner (2026-08-08), seals `20260808T212155Z` / `20260808T222712Z`. Honest status: BLOCKED at the fail-closed gate. Safety pack 25/25, sealed holdout ~0.78 against a 0.80 acceptance bar; never promoted. Ships only as a contingency if the Data Lot escalation (Tom Summerfield to Clint) fails to get data passed through correctly.
+- `5q_full_battery.md`: NOT a GEPA product. Derived from `4q_full_battery.md` by script (`voice_eval/runs/mdp314/derive_candidate.py`), so every change is a literal string replacement against the seed and the diff is reproducible. The spoken wording is the business's: the advisory is Hannah Clack's 2026-08-14 text on MDP-314, reproduced verbatim apart from "(short pause)" rendered as an ellipsis and "NOW" lowercased so TTS does not shout it. The state question wording is the ticket owner's, NOT the ticket's: MDP-314 specifies "Please confirm state where you live right now", which was judged to read like a checkpoint when spoken; "And what state do you live in?" asks the same thing. That deviation needs sign-off from the ticket author before launch.
+  Measured on 8 authored personas, 3 repeats a side, against `4q_full_battery.md` as the control: gate INCONCLUSIVE (every metric inside a noise floor measured on the same eval set, so no collateral damage detected); gift-card caller transferred 3/3 by the control and dropped 3/3 by this prompt; home-insurance, uninsured and misheard-question personas all at or above the control on the holdout split. Full run: `voice_eval/runs/mdp314/`.
 
 ## Cautions
 
@@ -73,3 +83,5 @@ All three prompts here were written by GEPA optimization, not hand-edited:
 ## History note
 
 Files were renamed on 2026-08-11: `compliance_joe_v9.md` is now `4q_full_battery.md`, `compliance_joe_v9_fqi.md` is now `4q_full_battery_branded.md`, `dl_gate_v1.md` is now `2q_transfer_handoff.md`. Old deep links to those paths are dead; git history is intact (`git log --follow`).
+
+`5q_full_battery.md` was added on 2026-08-16 for MDP-314 / CALLS-3479. It does not replace `4q_full_battery.md`, which is still what production runs; the two are separate variants and the 4Q file is unchanged. The name follows the question count: the fifth ask is the compliance advisory and the state re-confirmation that MDP-314 added.
