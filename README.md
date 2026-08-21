@@ -4,7 +4,7 @@ Source-of-truth repo for the inbound voice-agent prompt variants authored by Mar
 
 The repository records both original authorship and the owner of the currently deployed revision. The 3Q Intake (Original) prompt was never touched by Mark: zero commits from any Mark identity across all three branches of its repo (~300 commits, all Charlotte Hauke / charhauke / Esosa Sosa).
 
-## Inventory (production verified 2026-08-11; dedicated test lines verified 2026-08-18)
+## Inventory (production verified 2026-08-11; dedicated test lines verified 2026-08-18; home variant added 2026-08-21)
 
 | # | Name | Previously called | Qualifying questions | “How can I help you today?” | Author | Status | Test phone number | Prompt of record | Where it runs |
 |---|------|-------------------|----------------------|----------------------------------|--------|--------|-------------------|------------------|---------------|
@@ -14,9 +14,12 @@ The repository records both original authorship and the owner of the currently d
 | 4 | 4Q Full Battery, Branded | "FQI Joe" | Same 4 questions; brand identity via `{{brandName}}` merge token (10 occurrences, nothing hardcoded) | **Yes. Exact wording: “How can I help you today?”** | Mark | STAGED, not live. Provider-mapping correction added 2026-08-17; backend retest still required. | [+1 970-510-9982](tel:+19705109982) | [`4q_full_battery_branded.md`](4q_full_battery_branded.md) | Charlotte's three `*_auto_compliance_fqi` agents, created 2026-08-10, currently 0 calls. |
 | 5 | 2Q Transfer Handoff | "DL gate", "Data Lot handoff", "apologetic handoff" | Who are you currently insured with? (confirm) / Allstate-match accept? | No. Opens by acknowledging that the caller already answered questions. | Mark | ON HOLD per the 2026-08-08 decision. | [+1 970-648-8632](tel:+19706488632) | [`2q_transfer_handoff.md`](2q_transfer_handoff.md) | Demo only; transfer routing stubbed; never took a production call. |
 | 6 | 5Q Full Battery | "Compliance Joe + 3 questions", "the MDP-314 prompt" | And what state do you currently live in? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? / Compliance advisory then say your state again | **Yes. Exact wording: “How can I help you today?”** | Charlotte | LIVE 2026-08-18. Charlotte's prompt-based first/second-state comparison dropped all 14 tested mismatches. Prod, Stage, and Dev are identical (SHA-256 `867010839e43…`). | [+1 970-512-3170](tel:+19705123170) | [`5q_full_battery.md`](5q_full_battery.md) | Compliance-Joe Prod/Stage/Dev; production agent `33b95124-1b94-4b97-9ce5-658861044328`. |
+| 7 | 5Q Home Prequal | first home-vertical variant, no legacy nickname | Roughly what year was the home built? / Single family house, condo, townhouse, or mobile home? / What kind of roof does it have? / About how old is the roof? / Who is the current home insurance company? | No. Opens: “Hi, this is Joe, on a recorded line.” then asks why they rang, or goes straight to question one if the caller already said they want a quote. | Mark | STUB VALIDATED, NOT DEPLOYED. No production home backend exists, so this cannot be deployed even if approved. | [+1 970-489-7865](tel:+19704897865) | [`5q_home_prequal.md`](5q_home_prequal.md) | Nowhere in production. Test agent `fae9f397-a6c7-4156-a736-322adeffa7a9` only. |
 
 > [!IMPORTANT]
-> These six numbers reach isolated conversation-only Ultravox test agents. They do not call Trestle, submit qualifications, enter CtC routing, or transfer to a buyer. Each test agent ends with: “That completes this test flow. No live transfer will occur.” All six routes were verified by completed PSTN calls on 2026-08-18.
+> Numbers 1 to 6 reach isolated conversation-only Ultravox test agents. They do not call Trestle, submit qualifications, enter CtC routing, or transfer to a buyer. Each of those six test agents ends with: “That completes this test flow. No live transfer will occur.” All six routes were verified by completed PSTN calls on 2026-08-18.
+>
+> **Number 7 is different in two ways and the guarantee above does not cover it.** It DOES call a tool that submits the five collected answers, to `sendHomeQualification`, a clearly labelled non-production stub that returns AGENT or MARKETPLACE and reaches no real backend. And it does NOT say the “completes this test flow” line, because it is the prompt being handed to production and it has to close the way the shipped agent will close. It still reaches no production route: no CtC IVR, no campaign, no buyer, and no production `sendQualification_*` tool is attached to it.
 
 ## Provider-mapping release handoff
 
@@ -50,9 +53,21 @@ Opening: identical to 4Q Full Battery. The state question is reworded from "Grea
 Adds a fifth ask before any transfer: a fixed compliance advisory ("if you were promised any money, or a gift card, or if someone called you first without you asking for it, that is illegal and we cannot help you") closing with "please say again the state where you currently live now". The advisory is delivered to every caller who reaches a transfer, is never paraphrased, and always precedes `sendQualification`.
 Adds an answer-recording procedure: repeat each answer back using the caller's own words, re-ask if there is nothing to repeat, and after three asks of the same question close the call with the existing warm no-availability line rather than transferring. Charlotte's deployed revision tells Joe to compare the second spoken state with the first state inside the prompt; it does not add a second Trestle call or pass an unsupported state field to `sendQualification`.
 
+### 5Q Home Prequal
+The first home-vertical variant. It shares no questions, no tool, and no compliance machinery with variants 1 to 6, and none of the auto-side artifacts were copied into it: no state reconfirmation, no fraud advisory, no `currently_insured`, no `continuous_coverage`, no `getCallerState`.
+
+Opening: "Hi, this is Joe, on a recorded line." The recording disclosure is inside the first turn and is spoken exactly once. From there it either asks "Are you looking for a home insurance quote?" or, when the caller has already said they want a quote, goes straight to question one in the same breath. No path reaches a question about the home without the disclosure having been spoken.
+
+The five questions: year built, property type (single family / condo / townhouse / mobile home), roof type, roof age, current home insurance company. Roof age is never derived from the year the home was built; an unknown roof age is recorded as UNKNOWN.
+
+The carrier answer gets its own confirmation turn, built from exactly two pieces, the company name the caller said and the words "is that right?", each said once, with nothing else in the turn. That turn exists because the carrier field is the one value that decides routing, and the confirmation is what lets a caller correct a misheard name before anything is submitted. It has caught real mishearings in testing. The prompt deliberately contains no quoted worked example of that sentence: an earlier revision did, and the model echoed the example alongside the real value inside one utterance and spoke non-words.
+
+Callers filing a claim, asking for service on an existing policy, or selling something are diverted before any of the five questions. On completion it calls `sendHomeQualification`, which in every environment that exists today is a non-production stub.
+
 ## Where each prompt physically lives
 
 - Variants 3, 4, 5, 6: the runtime prompt lives on pre-created Ultravox agents; the services ([`compliance-voice-agent`](https://github.com/Local-Hero-LLC/compliance-voice-agent), [`auto-compliance-fqi`](https://github.com/Local-Hero-LLC/auto-compliance-fqi)) call the agent by ID with `systemPrompt` commented out. The files in THIS repo are therefore the prompt of record for those agents.
+- Variant 7: nowhere in production. The prompt of record is the file in THIS repo, and it is deployed byte-identical to test agent `fae9f397-a6c7-4156-a736-322adeffa7a9` on +1 970-489-7865. There is no production home agent to deploy it to, because production `sendQualification` has no home fields.
 - Variant 1: the prompt is hardcoded inside Charlotte's Node service ([`prequalification-voice-agent`](https://github.com/Local-Hero-LLC/prequalification-voice-agent)); changing it means a commit + deploy there. This repo intentionally holds no copy.
 - CtC's `ivrs` table has no prompt column. Its `welcome_message` field is stale documentation text (ivr 16 still shows the old 3Q greeting); the Ultravox call object is the only prompt ground truth.
 
