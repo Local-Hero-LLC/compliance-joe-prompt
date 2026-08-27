@@ -4,17 +4,18 @@ Source-of-truth repo for the inbound voice-agent prompt variants authored by Mar
 
 The repository records both original authorship and the owner of the currently deployed revision. The 3Q Intake (Original) prompt was never touched by Mark: zero commits from any Mark identity across all three branches of its repo (~300 commits, all Charlotte Hauke / charhauke / Esosa Sosa).
 
-## Inventory (production verified 2026-08-11; dedicated test lines verified 2026-08-18; home variant added 2026-08-21)
+## Inventory (production verified 2026-08-11; dedicated test lines verified 2026-08-18; home variant added 2026-08-21; every live inbound agent hash-verified 2026-08-27)
 
 | # | Name | Previously called | Qualifying questions | “How can I help you today?” | Author | Status | Test phone number | Prompt of record | Where it runs |
 |---|------|-------------------|----------------------|----------------------------------|--------|--------|-------------------|------------------|---------------|
-| 1 | 3Q Intake (Original) | "Original Joe", "Prequal Joe" | Are you currently insured? / Who is your current provider? / Insured 6+ months, no gaps? | No. Opens: “Hi this is Joe. I just have a few questions…” | Charlotte | LIVE. Prompt unchanged since 2026-07-14. | [+1 970-517-5245](tel:+19705175245) | [`prequalification-voice-agent` `index.js` line 362](https://github.com/Local-Hero-LLC/prequalification-voice-agent/blob/prod_prequal_agent/index.js#L362) (hardcoded in the service) | CtC ivr 14. Campaigns: Found Performance - Auto (1326), RevX - Auto Pre-qual (1624). |
+| 1 | 3Q Intake (Original) | "Original Joe", "Prequal Joe" | Are you currently insured? / Who is your current provider? / Insured 6+ months, no gaps? | No. Opens: “Hi this is Joe. I just have a few questions…” | Charlotte | LIVE. Prompt unchanged since 2026-07-14. | [+1 970-517-5245](tel:+19705175245) | [`3q_intake.md`](3q_intake.md), lifted 2026-08-27 from [`prequalification-voice-agent` `index.js` line 362](https://github.com/Local-Hero-LLC/prequalification-voice-agent/blob/prod_prequal_agent/index.js#L362), which stays the editable source. The file is the hash reference, not the edit surface. | CtC ivr 14. Campaigns: Found Performance - Auto (1326), RevX - Auto Pre-qual (1624). |
 | 2 | 3Q Intake Rework | "improved / more conversational Prequal Joe" | Same 3 questions, plus a warm opener and an upfront recording disclosure | **No. It goes directly into “Are you currently insured?”** | Mark | NEVER DEPLOYED. Candidate only (GEPA it2, 2026-07-24). | [+1 970-373-0362](tel:+19703730362) | [`prequal_auto_gepa_it2_best.md`](https://github.com/mlh-mjc/general-reorg/blob/073df6d250f1aef9f32a81d8a807621ef8711c7d/current_state/staging_and_telephony/voice-prompt-fix/prompts_out/prequal_auto_gepa_it2_best.md) (validated winner archived in GitHub) | Nowhere. |
 | 3 | 4Q Full Battery | "Compliance Joe", "Prequal + Compliance Joe" | What state are you calling from? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? | **Yes. Exact wording: “How can I help you today?”** | Mark | LIVE since 2026-08-06. The provider-mapping correction is validated and awaiting Charlotte's backend test and deployment. | [+1 970-436-9313](tel:+19704369313) | [`4q_full_battery.md`](4q_full_battery.md) | **Production prompt editor: [Compliance-Joe-Prod](https://app.ultravox.ai/agents/33b95124-1b94-4b97-9ce5-658861044328/edit) (`33b95124-1b94-4b97-9ce5-658861044328`), serving CtC ivr 16 on +1 737-637-9256. Campaign routing is shared and varies by call.** |
-| 4 | 4Q Full Battery, Branded | "FQI Joe" | Same 4 questions; brand identity via `{{brandName}}` merge token (10 occurrences, nothing hardcoded) | **Yes. Exact wording: “How can I help you today?”** | Mark | STAGED, not live. Provider-mapping correction added 2026-08-17; backend retest still required. | [+1 970-510-9982](tel:+19705109982) | [`4q_full_battery_branded.md`](4q_full_battery_branded.md) | Charlotte's three `*_auto_compliance_fqi` agents, created 2026-08-10, currently 0 calls. |
+| 4 | 4Q Full Battery, Branded | "FQI Joe" | Same 4 questions; brand identity via `{{brandName}}` merge token (10 occurrences, nothing hardcoded) | **Yes. Exact wording: “How can I help you today?”** | Mark | LIVE-VERIFIED, low volume. Hash-identical to the deployed `prod_auto_compliance_fqi` agent template on 2026-08-27 (SHA-256 `68a366ee7259…`). Took 11 calls on 2026-08-20 and has been silent since. Provider-mapping correction added 2026-08-17; backend retest still required. | [+1 970-510-9982](tel:+19705109982) | [`4q_full_battery_branded.md`](4q_full_battery_branded.md) | Charlotte's three `*_auto_compliance_fqi` agents, created 2026-08-10, currently 0 calls. |
 | 5 | 2Q Transfer Handoff | "DL gate", "Data Lot handoff", "apologetic handoff" | Who are you currently insured with? (confirm) / Allstate-match accept? | No. Opens by acknowledging that the caller already answered questions. | Mark | ON HOLD per the 2026-08-08 decision. | [+1 970-648-8632](tel:+19706488632) | [`2q_transfer_handoff.md`](2q_transfer_handoff.md) | Demo only; transfer routing stubbed; never took a production call. |
 | 6 | 5Q Full Battery | "Compliance Joe + 3 questions", "the MDP-314 prompt" | And what state do you currently live in? / Are you currently insured? / Who's your current provider? / Insured 6+ months, no gaps? / Compliance advisory then say your state again | **Yes. Exact wording: “How can I help you today?”** | Charlotte | LIVE 2026-08-18. Charlotte's prompt-based first/second-state comparison dropped all 14 tested mismatches. Prod, Stage, and Dev are identical (SHA-256 `867010839e43…`). | [+1 970-512-3170](tel:+19705123170) | [`5q_full_battery.md`](5q_full_battery.md) | Compliance-Joe Prod/Stage/Dev; production agent `33b95124-1b94-4b97-9ce5-658861044328`. |
 | 7 | 5Q Home Prequal | first home-vertical variant, no legacy nickname | Roughly what year was the home built? / Single family house, condo, townhouse, or mobile home? / What kind of roof does it have? / About how old is the roof? / Who is the current home insurance company? | No. Opens: “Hi, this is Joe, on a recorded line.” then asks why they rang, or goes straight to question one if the caller already said they want a quote. | Mark | STUB VALIDATED, NOT DEPLOYED. No production home backend exists, so this cannot be deployed even if approved. | [+1 970-489-7865](tel:+19704897865) | [`5q_home_prequal.md`](5q_home_prequal.md) | Nowhere in production. Test agent `fae9f397-a6c7-4156-a736-322adeffa7a9` only. |
+| 8 | 2Q Commercial Intake | no legacy nickname; reached the team as "the Geico agent" after the ivr it serves | Is this referral to cover a trucking operation? (`is_trucking`) / And which state are you calling for? (`state`) | No. Opens: “Hi this is Joe, I just have a couple questions before I connect you with an agent.” | Charlotte | LIVE. Verified from a production call on 2026-08-26. | (none) | [`2q_commercial_intake.md`](2q_commercial_intake.md) | CtC ivr 15 on +1 689-588-5693, ad-hoc Ultravox call with no agent id, call metadata `env = Geico_prod`. Transfers through `beginIvrTransfer` to `voice-inbound-geico.callstoconvert.com`. |
 
 > [!IMPORTANT]
 > Numbers 1 to 6 reach isolated conversation-only Ultravox test agents. They do not call Trestle, submit qualifications, enter CtC routing, or transfer to a buyer. Each of those six test agents ends with: “That completes this test flow. No live transfer will occur.” All six routes were verified by completed PSTN calls on 2026-08-18.
@@ -68,7 +69,8 @@ Callers filing a claim, asking for service on an existing policy, or selling som
 
 - Variants 3, 4, 5, 6: the runtime prompt lives on pre-created Ultravox agents; the services ([`compliance-voice-agent`](https://github.com/Local-Hero-LLC/compliance-voice-agent), [`auto-compliance-fqi`](https://github.com/Local-Hero-LLC/auto-compliance-fqi)) call the agent by ID with `systemPrompt` commented out. The files in THIS repo are therefore the prompt of record for those agents.
 - Variant 7: nowhere in production. The prompt of record is the file in THIS repo, and it is deployed byte-identical to test agent `fae9f397-a6c7-4156-a736-322adeffa7a9` on +1 970-489-7865. There is no production home agent to deploy it to, because production `sendQualification` has no home fields.
-- Variant 1: the prompt is hardcoded inside Charlotte's Node service ([`prequalification-voice-agent`](https://github.com/Local-Hero-LLC/prequalification-voice-agent)); changing it means a commit + deploy there. This repo intentionally holds no copy.
+- Variant 1: the prompt is hardcoded inside Charlotte's Node service ([`prequalification-voice-agent`](https://github.com/Local-Hero-LLC/prequalification-voice-agent)); changing it means a commit + deploy there. As of 2026-08-27 this repo holds `3q_intake.md` as a **hash reference only**, so the highest-volume inbound variant can be named from what is deployed rather than from a typed label. Editing that file changes nothing in production. It supersedes the earlier "this repo intentionally holds no copy" position, which left variant 1 unnameable.
+- Variant 8: same shape as variant 1. The prompt is injected ad hoc by the Geico inbound service, the call carries no `agentId`, and `2q_commercial_intake.md` is a hash reference lifted from a live call, not an edit surface.
 - CtC's `ivrs` table has no prompt column. Its `welcome_message` field is stale documentation text (ivr 16 still shows the old 3Q greeting); the Ultravox call object is the only prompt ground truth.
 
 ## Deployment map
@@ -78,7 +80,8 @@ Callers filing a claim, asking for service on an existing policy, or selling som
 | Compliance-Joe-Prod / -Stage / -Dev (`33b95124…` / `0ae8e70b…` / `e20e3520…`) | 2026-08-03 | Original `4q_full_battery.md` before the provider-mapping correction | Production ivr 16 traffic since 2026-08-06 (CALLS-3410). The production agent was not changed by the 2026-08-17 fix work. |
 | Compliance-Joe-V1 (`a5e4eedc…`) | 2026-07 | 4Q Full Battery lineage | Test line +1 970-409-1156 (Charlotte's webhook; full tool support) |
 | Compliance-Joe-FQI (`300574ed…`) | 2026-07-30 | `4q_full_battery_branded.md` | Demo line via Mark's router; `getCallerState`/`sendQualification` return `call_not_found` by design |
-| prod/stage/dev_auto_compliance_fqi (`637e640f…` etc.) | 2026-08-10 | Modified copy of the branded file (see Cautions) | Charlotte's FQI service, pre-launch, 0 calls |
+| prod/stage/dev_auto_compliance_fqi (`637e640f…` etc.) | 2026-08-10 | `4q_full_battery_branded.md`, hash-identical as of 2026-08-27 (see Cautions for the merge-token defect) | Charlotte's FQI service, CtC ivr 17 on +1 307-318-1842; 11 calls on 2026-08-20, silent since |
+| Ad-hoc, no agent id (ivr 14, ivr 15) | n/a | `3q_intake.md` and `2q_commercial_intake.md`, injected per call by their services | CtC ivr 14 on +1 478-475-2126 (`env = prequal_prod`) and ivr 15 on +1 689-588-5693 (`env = Geico_prod`) |
 | DL-Gate-BEST-r9-20260808 (`c96eb3bc…`) | 2026-08-09 | `2q_transfer_handoff.md` | Demo line +1 970-489-7023, routing tool stubbed |
 | Dedicated self-service test agents (`768b591e…`, `2d0bd65b…`, `901bdfed…`, `cd915793…`, `7177fbdc…`, `645271a3…`) | 2026-08-18 | Isolated copies of variants 1–6 | Six dedicated numbers in the inventory table; conversation-only, with only `hangUp` enabled |
 | Provider-mapping fix test agents (`14fce552…`, `3b17eb9e…`, `6886ebc1…`) | 2026-08-16 to 2026-08-17 | Test copies of `4q_full_battery.md` and `5q_full_battery.md` | RETIRED. All disposable agents were deleted. +1 970-489-7023 was restored to sealed DL-gate agent `c96eb3bc…`. |
@@ -100,14 +103,36 @@ Variants 3, 4 and 5 were written by GEPA optimization, not hand-edited. Variant 
 > The "test" line +1 970-409-1156 carries PRODUCTION routing (`sendQualification_prod`, tool `df7b3c14…`, same ID as Compliance-Joe-Prod) since ~2026-08-03. A successful transfer from that line is a real transfer.
 
 > [!WARNING]
-> Charlotte's three `*_auto_compliance_fqi` agents (2026-08-10) differ from `4q_full_battery_branded.md` in exactly two ways, both defects:
-> 1. The persona line was edited to hardcode `{{brandName}} = 'Find Quality Insurance'` while the service's `templateContext` still passes no `brandName` value. Note the spelling conflict: the demo router used "Fine Quality Insurance". Confirm the real brand before launch.
-> 2. All 26 em dashes in the prompt were corrupted to mojibake bytes (encoding mishap during copy-paste). Fix by re-pasting from the raw file in this repo.
+> Re-verified 2026-08-27 against the live `prod_auto_compliance_fqi` agent template. Both defects recorded here
+> on 2026-08-10 are gone: the template is now byte-identical to `4q_full_battery_branded.md` after newline
+> normalisation (SHA-256 `68a366ee7259…`), all 27 em dashes are intact, and nothing is hardcoded.
+>
+> **One live defect remains, and it is worse than either of the originals.** The agent's `templateContext` is
+> `null`, so every one of the 10 `{{brandName}}` tokens resolves to an empty string at call time. The prompt the
+> model actually received on the 2026-08-20 production calls is 19,091 characters, 130 short of the 19,221-character
+> template, and its opening line reads "this is Joe with , a service that helps connect you with licensed insurance
+> agents". The brand is never spoken. Set `templateContext.brandName` on the agent before any launch, and confirm
+> the real brand string first: the file's own persona line says "Find Quality Insurance" while the demo router
+> used "Fine Quality Insurance".
+
+> [!WARNING]
+> `2q_commercial_intake.md` instructs Joe to call `sendQualification` once all required fields are collected, and
+> that tool is not attached to the call. The ivr 15 calls carry exactly two tools, `beginIvrTransfer` and `hangUp`.
+> Flagged 2026-08-27, not fixed: the file is a verbatim record of what is deployed, and correcting it is a change
+> to Charlotte's Geico inbound service, not to this repo.
 
 > [!NOTE]
 > `compliance_stage` ran 62 calls on a real DID (+1 252-590-4591) on 2026-08-04 with the production prompt. If any of those were live callers, they are labeled stage in call metadata.
 
 ## History note
+
+On 2026-08-27 two files were added so that every inbound agent running in production can be named from its
+deployed prompt rather than from a typed label: `3q_intake.md` (ivr 14, lifted from the `prequalification-voice-agent`
+service) and `2q_commercial_intake.md` (ivr 15, lifted from a live call). Both are hash references, not edit surfaces.
+All four live inbound agents now resolve to a file: ivr 14 to `3q_intake.md`, ivr 15 to `2q_commercial_intake.md`,
+ivr 16 to `5q_full_battery.md`, and ivr 17 to `4q_full_battery_branded.md`. `2q_transfer_handoff.md`, `4q_full_battery.md`
+and `5q_home_prequal.md` are deployed nowhere and are expected never to match a live agent.
+
 
 Files were renamed on 2026-08-11: `compliance_joe_v9.md` is now `4q_full_battery.md`, `compliance_joe_v9_fqi.md` is now `4q_full_battery_branded.md`, `dl_gate_v1.md` is now `2q_transfer_handoff.md`. Old deep links to those paths are dead; git history is intact (`git log --follow`).
 
